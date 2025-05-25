@@ -43,7 +43,7 @@ These examples will also require a RabbitMQ server. For local development, I'd r
 
 ### Creating the Autobarn.AuditLog service
 
-We're going to host our AuditLog service in a .NET console application, so we'll start by creating a new dotnet console app and adding the EasyNetQ components.
+We're going to host our AuditLog service using the [.NET Generic Host](https://learn.microsoft.com/en-us/dotnet/core/extensions/generic-host?tabs=appbuilder), a base class which provides dependency injection, async startup/shutdown support, logging, and more. 
 
 If you're using the `dotnet` CLI, run the following commands from the `dotnet` folder in the Autobarn project:
 
@@ -54,15 +54,13 @@ dotnet sln add Autobarn.AuditLog
 
 If you're using Visual Studio, right-click the Autobarn solution in the Solution Explorer, Add, New Project, and add a new .NET Console application.
 
-We'll need to install some NuGet packages - one for EasyNetQ itself, and a few from the `Microsoft.Extensions.Configuration` namespace so we can manage the connection string for our message queue service.
+We'll need to install some NuGet packages - one for EasyNetQ itself, one which configures EasyNetQ to use the System.Text.Json serializer, and one for [Microsoft.Extensions.Hosting](https://www.nuget.org/packages/Microsoft.Extensions.Hosting) which includes the generic host:
 
 ```powershell
 cd Autobarn.AuditLog
 dotnet add package EasyNetQ
-dotnet add package Microsoft.Extensions.Configuration
-dotnet add package Microsoft.Extensions.Configuration.FileExtensions
-dotnet add package Microsoft.Extensions.Configuration.Json
-dotnet add package Microsoft.Extensions.Configuration.EnvironmentVariables
+dotnet add package EasyNetQ.Serialization.SystemTextJson
+dotnet add package Microsoft.Extensions.Hosting
 ```
 
 #### Creating the Autobarn.Messages assembly
@@ -112,42 +110,45 @@ We're going to add a simple handler to our AuditLog service. The service will co
 using Autobarn.Messages;
 using EasyNetQ;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.IO;
-using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-namespace Autobarn.AuditLog {
-	class Program {
-		private static readonly IConfigurationRoot config = ReadConfiguration();
+var builder = Host.CreateApplicationBuilder(args);
+var amqp = builder.Configuration.GetConnectionString("AutobarnRabbitMQ");
+var bus = RabbitHutch.CreateBus(amqp, services => services.EnableSystemTextJson());
+builder.Services.AddSingleton(bus);
+builder.Services.AddHostedService<AuditLogService>();
 
-		private const string SUBSCRIBER_ID = "Autobarn.AuditLog";
+var host = builder.Build();
+await host.RunAsync();
 
-		static async Task Main(string[] args) {
-			using var bus = RabbitHutch.CreateBus(config.GetConnectionString("AutobarnRabbitMQ"));
-			Console.WriteLine("Connected! Listening for NewVehicleMessage messages.");
-			await bus.PubSub.SubscribeAsync<NewVehicleMessage>(SUBSCRIBER_ID, HandleNewVehicleMessage);
-			Console.ReadKey(true);
-		}
+```
 
-		private static void HandleNewVehicleMessage(NewVehicleMessage message) {
-			var csv =
-				$"{message.Registration},{message.Manufacturer},{message.ModelName},{message.Color},{message.Year},{message.ListedAtUtc:O}";
-			Console.WriteLine(csv);
-		}
+We'll create the AuditLogService class which implements `IHostedService`:
 
-		private static IConfigurationRoot ReadConfiguration() {
-			var basePath = Directory.GetParent(AppContext.BaseDirectory).FullName;
-			return new ConfigurationBuilder()
-				.SetBasePath(basePath)
-				.AddJsonFile("appsettings.json")
-				.AddEnvironmentVariables()
-				.Build();
-		}
+```csharp
+public class AuditLogService(IConfiguration config, IBus bus) : IHostedService {
+	private const string SUBSCRIBER_ID = "Autobarn.AuditLog";
+
+	public async Task StartAsync(CancellationToken token) {
+		Console.WriteLine("Connected! Listening for NewVehicleMessage messages.");
+		await bus.PubSub.SubscribeAsync<NewVehicleMessage>(SUBSCRIBER_ID, HandleNewVehicleMessage, token);
+	}
+
+	public Task StopAsync(CancellationToken cancellationToken) {
+		Console.WriteLine("Shutting down Audit Log service.");
+		return Task.CompletedTask;
+	}
+
+	private static void HandleNewVehicleMessage(NewVehicleMessage message) {
+		var csv =
+			$"{message.Registration},{message.Manufacturer},{message.ModelName},{message.Color},{message.Year},{message.ListedAtUtc:O}";
+		Console.WriteLine(csv);
 	}
 }
 ```
 
-We're also going to add an `appsettings.json` file to our `AuditLog` app:
+and we'll add an `appsettings.json` file to our `AuditLog` app:
 
 ```json
 {

@@ -110,7 +110,7 @@ public IActionResult Delete(string id) {
 }
 ```
 
-### Exercise: Building HTTP APIs
+# Exercise: Building HTTP APIs
 
 Create a new controller at `Autobarn.Website/Controllers/Api/ModelsController.cs`
 
