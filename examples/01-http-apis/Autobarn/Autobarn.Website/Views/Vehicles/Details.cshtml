@@ -1,0 +1,19 @@
+@model Autobarn.Data.Entities.Vehicle
+@{
+	ViewData["Title"] = $"{Model.Registration} : Autobarn";
+}
+<h2>@Model.Registration</h2>
+<hr />
+<dl>
+	<dt>Make:</dt>
+	<dd><a href="@Url.Action("Details", "Makes", new { id = Model.Model.MakeCode })">@Model.Model.Make.Name</a></dd>
+	<dt>Model:</dt>
+	<dd><a href="@Url.Action("Details", "CarModels", new { id = Model.ModelCode })">@Model.Model.Name</a></dd>
+	<dd>@Model.Model.Name</dd>
+	<dt>Year:</dt>
+	<dd>@Model.Year</dd>
+	<dt>Colour:</dt>
+	<dd>@Model.Color</dd>
+</dl>
+
+

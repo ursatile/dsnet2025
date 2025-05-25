@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\Autobarn.Website.props" />
+</Project>

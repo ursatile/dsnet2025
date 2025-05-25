@@ -18,30 +18,36 @@ cd autobarn
 cd dotnet
 dotnet build
 dotnet test
-dotnet run --project Autobarn.Website
+dotnet run --project Autobarn.Website**
 ```
 
-### Running Autobarn with an in-memory data store
+### Sqlite and in-memory databases
 
-By default, Autobarn runs against an in-memory data store based on CSV files. This means it doesn't need a SQL database or any external dependencies, but any changes you make will be lost when you stop the application. *(For testing & training, this is normally fine, and this app isn't intended to run in production anyway.)*
+Autobarn uses Entity Framework (EF) Core, but it's configured to use the Sqlite DB provider with an in-memory database
 
-### Running Autobarn with a SQL Server database
+> SQLite is a C-language library that implements a [small](https://sqlite.org/footprint.html), [fast](https://sqlite.org/fasterthanfs.html), [self-contained](https://sqlite.org/selfcontained.html), [high-reliability](https://sqlite.org/hirely.html), [full-featured](https://sqlite.org/fullsql.html), SQL database engine. SQLite is the [most used](https://sqlite.org/mostdeployed.html) database engine in the world. SQLite is built into all mobile phones and most computers and comes bundled inside countless other applications that people use every day.
+>
+> *from [https://sqlite.org/](https://sqlite.org/)*
 
-Autobarn also includes a data store based on SQL Server and Entity Framework. The SQL database is available as a Docker image, so you'll need Docker installed to use this.
+In other words, SQLite is a tiny database engine that doesn't use a server: it runs in the same process as our application code, which makes it perfect for development and testing scenarios where we need to connect a database but we don't *really* care what happens to the data.
 
-To use the SQL Server data store:
+If you take a look in `Program.cs` you'll see these lines:
 
-1. Run the Autobarn Docker image:
+```csharp
+SqliteConnection sqliteConnection = new($"Data Source=:memory:");
+sqliteConnection.Open();
+builder.Services.AddDbContext<AutobarnDbContext>(options => options.UseSqlite(sqliteConnection));
+```
 
-   `docker run -p 1433:1433 -d ursatile/ursatile-workshops:autobarn-mssql2019-latest`
+and
 
-2. Edit `Autobarn.Website\appsettings.json` and change the `DatabaseMode`:
+```
+using var scope = app.Services.CreateScope();
+await using var db = scope.ServiceProvider.GetRequiredService<AutobarnDbContext>();
+db.Database.EnsureCreated();
+```
 
-   ````
-   "DatabaseMode": "sql",
-   ````
+The in-memory provider for Sqlite (initialised by the `"Data Source=:memory"` connection string) will create a temporary database that persists for as long as there's at least one open connection, so we explicitly open a connection that stays open for the lifetime of the application, and then we use EF Core's `Database.EnsureCreated()` method to scaffold the data schema and populate it with sample data.
 
-3. Run the `Autobarn.Website` project
-
-The `Autobarn.Website.Tests` project overrides the website configuration, so the tests will *always* run against the in-memory data store.
+The data itself is held in a set of CSV files in the `Autobarn.Data.Sample` folder/namespace, and is inserted using the `.HasData()` method called from the `AutobarnDbContext` class.
 

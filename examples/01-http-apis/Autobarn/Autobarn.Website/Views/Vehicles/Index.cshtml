@@ -1,0 +1,12 @@
+@model IEnumerable<Autobarn.Data.Entities.Vehicle>
+@{
+    ViewData["Title"] = "Vehicles";
+}
+
+<ul>
+    @foreach (var vehicle in Model) {
+        <li class="vehicle">
+            <a href="@Url.Action("Details", "Vehicles", new { id = vehicle.Registration })">@vehicle.Registration</a>
+        </li>
+    }
+</ul>

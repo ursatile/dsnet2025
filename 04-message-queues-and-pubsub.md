@@ -14,7 +14,7 @@ In this module, we're going to look at message queues, which offer a different w
 
 ### Message Queuing Concepts
 
-A **queue** is really just a buffer that can store messages. 
+A **queue** is really just a buffer that can store messages.
 
 #### Direct Messages
 
@@ -35,9 +35,9 @@ In this exercise, we're going to add a simple publish/subscribe capability to Au
 * When a new vehicle is added to the database, we want to **publish** a message containing details of that vehicle.
 * We're going to create a **subscriber** component called the `Autobarn.AuditLog`. This component will subscribe to messages about new vehicles; every time a new vehicle is added to the system, the `AuditLog` will write the details of that vehicle to the end of a CSV log file.
 
-For these examples, we're going to use a messaging library called [EasyNetQ](http://easynetq.com/), which provides some powerful and lightweight abstractions on top of RabbitMQ. 
+For these examples, we're going to use a messaging library called [EasyNetQ](http://easynetq.com/), which provides some powerful and lightweight abstractions on top of RabbitMQ.
 
-These examples will also require a RabbitMQ server. For local development, I'd recommend running RabbitMQ using Docker (see below). If you want to communicate across the internet with other machines, you can either run a Docker image in the cloud, or use a hosted service like [CloudAMQP](https://www.cloudamqp.com/). 
+These examples will also require a RabbitMQ server. For local development, I'd recommend running RabbitMQ using Docker (see below). If you want to communicate across the internet with other machines, you can either run a Docker image in the cloud, or use a hosted service like [CloudAMQP](https://www.cloudamqp.com/).
 
 > Most cloud providers now offer a message queueing platform. Microsoft Azure includes [Azure Service Bus](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview), AWS provides the [Amazon Simple Queue Service](https://aws.amazon.com/sqs/), and Google has the [Cloud Pub/Sub](https://cloud.google.com/pubsub) platform. They all have their own terminology and quirks, but the messaging patterns we're learning about can be implemented on top of any platform. There are also several mature open source .NET messaging frameworks, including [NServiceBus](https://particular.net/nservicebus) and [MassTransit](https://masstransit-project.com/), which run on top of various different transport layers so that you could, for example, use RabbitMQ for local development and then switch to Azure Service Bus for production deployments.
 
@@ -177,7 +177,7 @@ You'll also need to add the RabbitMQ connection string to `appsettings.json`:
 ```diff
 "ConnectionStrings": {
     "AutobarnSqlConnectionString": "Server=localhost;Database=Autobarn;User=autobarn;Password=autobarn;",
-+    "AutobarnRabbitMQ":  "amqp://user:pass@localhost:5672" 
++    "AutobarnRabbitMQ":  "amqp://user:pass@localhost:5672"
   },
 ```
 
@@ -188,10 +188,10 @@ namespace Autobarn.Website.Controllers.api {
 	[Route("api/[controller]")]
 	[ApiController]
 	public class VehiclesController : ControllerBase {
-		private readonly IAutobarnDatabase db;
+		private readonly AutobarnDbContext db;
 		private readonly IBus bus;
 
-		public VehiclesController(IAutobarnDatabase db, IBus bus) {
+		public VehiclesController(AutobarnDbContext db, IBus bus) {
 			this.db = db;
 			this.bus = bus;
 		}
@@ -246,7 +246,7 @@ Now, start both the `Autobarn.Website` and `Autobarn.AuditLog` applications, and
 
 There are two other endpoints in our application that users can use to add new cars to the platform - there's a web form available in the front-end web app, and the `PUT /api/vehicles` endpoint will also allow a user to add a new vehicle.
 
-Modify each of these methods to publish a `NewVehicleMessage` when a new vehicle is added to the platform. 
+Modify each of these methods to publish a `NewVehicleMessage` when a new vehicle is added to the platform.
 
 > ⚠ For the `PUT` endpoint, you'll need to figure out how to distinguish between a new vehicle being added to the platform for the first time, and an update to an existing vehicle.
 

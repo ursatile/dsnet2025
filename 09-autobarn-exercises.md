@@ -6,6 +6,8 @@ summary: >
     Extra exercises and services you can add to the Autobarn application to get further experience of working with distributed applications
 ---
 
+
+
 ### Exercise: Autobarn.MailSender
 
 Create an additional service as part of the Autobarn stack, that will send an email every time we get the price for a new vehicle.

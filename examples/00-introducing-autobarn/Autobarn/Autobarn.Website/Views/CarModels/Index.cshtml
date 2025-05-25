@@ -1,0 +1,20 @@
+@model List<CarModel>
+
+@{
+	ViewBag.Title = "Models";
+	Layout = "_Layout";
+}
+
+<h2>All Makes &amp; Models</h2>
+@foreach (var group in Model.GroupBy(m => m.Make).OrderBy(m => m.Key.Name)) {
+	<h3>@group.Key.Name</h3>
+	<ul>
+		@foreach (var carModel in group) {
+			<li>
+				<a href="@Url.Action("Details", "CarModels", new { id = carModel.Code })">
+					@carModel.Make.Name @carModel.Name
+				</a>
+			</li>
+		}
+	</ul>
+}

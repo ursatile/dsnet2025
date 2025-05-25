@@ -1,0 +1,19 @@
+@model CarModel
+
+@{
+	ViewBag.Title = @Model.Name;
+}
+
+<h1>@Model.Make.Name @Model.Name</h1>
+<hr />
+@if (Model.Vehicles.Any()) {
+	<ul>
+		@foreach (var vehicle in Model.Vehicles) {
+			<li><a href="@Url.Action("Details", "Vehicles", new { id = vehicle.Registration})">@vehicle.Registration</a></li>
+		}
+	</ul>
+} else {
+	<p><em>We don't have any @Model.Make.Name @Model.Name cars for sale right now.</em></p>
+}
+<hr />
+<a href="@Url.Action("Advertise", "Vehicles" , new { id = @Model.Code })">Sell your @Model.Make.Name @Model.Name here</a>

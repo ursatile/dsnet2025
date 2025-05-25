@@ -20,7 +20,7 @@ To add GraphQL support to the Autobarn project, we'll start by adding some NuGet
 ```bash
 cd Autobarn.Website
 dotnet add package GraphQL
-dotnet add package GraphQL.NewtonsoftJson 
+dotnet add package GraphQL.NewtonsoftJson
 dotnet add package GraphQL.Server.Transports.AspNetCore
 dotnet add package GraphQL.MicrosoftDI
 dotnet add package GraphiQL
@@ -45,7 +45,7 @@ Here's the project structure you'll end up with once we've added the GraphQL typ
 ```diff
 Autobarn.Website
 ├─ Controllers
-│   └─... 
+│   └─...
 │
 ├─ GraphQL
 │  ├─ GraphTypes
@@ -58,13 +58,13 @@ Autobarn.Website
 │     └─ AutobarnSchema.cs
 │
 ├───Models
-│   └─ ... 
+│   └─ ...
 ├───Properties
-│   └─ ... 
+│   └─ ...
 ├───Views
-│   └─ ... 
+│   └─ ...
 └───wwwroot
-    └─ ...               
+    └─ ...
 ```
 
 We're going to add the following classes to our project:
@@ -133,7 +133,7 @@ using GraphQL.Types;
 
 namespace Autobarn.Website.GraphQL.Schemas {
 	public class AutobarnSchema : Schema {
-		public AutobarnSchema(IAutobarnDatabase db) => Query = new VehicleQuery(db);
+		public AutobarnSchema(AutobarnDbContext db) => Query = new VehicleQuery(db);
 	}
 }
 ```
@@ -154,9 +154,9 @@ using System.Linq;
 
 namespace Autobarn.Website.GraphQL.Queries {
 	public class VehicleQuery : ObjectGraphType {
-		private readonly IAutobarnDatabase db;
+		private readonly AutobarnDbContext db;
 
-		public VehicleQuery(IAutobarnDatabase db) {
+		public VehicleQuery(AutobarnDbContext db) {
 			this.db = db;
 
 			Field<ListGraphType<VehicleGraphType>>("Vehicles")
@@ -210,10 +210,10 @@ public void ConfigureServices(IServiceCollection services) {
 			services.UseAutobarnSqlDatabase(sqlConnectionString);
 			break;
 		default:
-			services.AddSingleton<IAutobarnDatabase, AutobarnCsvFileDatabase>();
+			services.AddSingleton<AutobarnDbContext, AutobarnCsvFileDatabase>();
 			break;
 	}
-	
+
 +   services.AddGraphQL(builder => builder
 +       .AddHttpMiddleware<ISchema>()
 +       .AddNewtonsoftJson()
@@ -222,7 +222,7 @@ public void ConfigureServices(IServiceCollection services) {
 +   );
 
 }
-		
+
 public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
 	if (env.IsDevelopment()) {
 		app.UseDeveloperExceptionPage();
@@ -269,7 +269,7 @@ public static IHostBuilder CreateHostBuilder(string[] args) =>
 	);
 ```
 
-> ℹ You can also run GraphQL - and most of the other examples in this workshop - using the `SystemTextJsonSerializer` instead of `NewtonsoftJson`. The main reason I've stuck with the Newtonsoft serializer is that it has better default support for `camelCase` property names. 
+> ℹ You can also run GraphQL - and most of the other examples in this workshop - using the `SystemTextJsonSerializer` instead of `NewtonsoftJson`. The main reason I've stuck with the Newtonsoft serializer is that it has better default support for `camelCase` property names.
 
 ## Using GraphiQL
 

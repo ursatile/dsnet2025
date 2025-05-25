@@ -82,7 +82,7 @@ Once we've added our `ToDynamic` method to our codebase, we can use it in any of
 [HttpGet("{id}")]
 [Produces("application/hal+json")]
 public IActionResult Get(string id) {
-	var vehicle = db.FindVehicle(id);
+	var vehicle = db.Vehicles.FirstOrDefaultAsync(v => v.Registration == id);
 	if (vehicle == default) return NotFound();
 	var json = vehicle.ToDynamic();
 	return Ok(json);
